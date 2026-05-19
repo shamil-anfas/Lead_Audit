@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand palette */
+  --brand-50:  #f0eeff;
+  --brand-100: #e2dcff;
+  --brand-400: #8b76fe;
+  --brand-500: #7c5cfc;
+  --brand-600: #6741fa;
+
+  /* Surfaces */
+  --surface-bg:       #0a0a14;
+  --surface-card:     #111120;
+  --surface-elevated: #181830;
+  --surface-border:   #1e1e3a;
+  --surface-hover:    #1a1a35;
+
+  /* Text */
+  --text-primary:   #f0f0ff;
+  --text-secondary: #8888aa;
+  --text-muted:     #555577;
+
+  /* Scores */
+  --score-green: #10b981;
+  --score-amber: #f59e0b;
+  --score-red:   #f87171;
+
+  /* Glow effects */
+  --glow-brand: 0 0 30px rgba(124, 92, 252, 0.25);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--surface-bg); }
+::-webkit-scrollbar-thumb  { background: var(--surface-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-500); }
+
+/* ── Shimmer skeleton ─────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-elevated) 25%,
+    var(--surface-hover) 50%,
+    var(--surface-elevated) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position:  1000px 0; }
+}
+
+/* ── Score ring ───────────────────────────────────────────────────── */
+.score-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Card hover lift ──────────────────────────────────────────────── */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(124, 92, 252, 0.15);
+}
+
+/* ── Glass panel ──────────────────────────────────────────────────── */
+.glass {
+  background: rgba(17, 17, 32, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--surface-border);
+}
+
+/* ── Glow button ──────────────────────────────────────────────────── */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.btn-glow:hover::after { opacity: 1; }
+.btn-glow:active { transform: scale(0.98); }
+
+/* ── Progress bar ─────────────────────────────────────────────────── */
+.progress-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-400), #a898ff);
+  background-size: 200% 100%;
+  animation: progress-shimmer 1.5s infinite;
+  border-radius: 999px;
+}
+@keyframes progress-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Score chip colors ────────────────────────────────────────────── */
+.score-green { color: var(--score-green); }
+.score-amber { color: var(--score-amber); }
+.score-red   { color: var(--score-red); }
+
+.bg-score-green { background-color: var(--score-green); }
+.bg-score-amber { background-color: var(--score-amber); }
+.bg-score-red   { background-color: var(--score-red); }
+
+/* ── Fade / slide animations ──────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in  { animation: fadeIn  0.4s ease-out; }
+.animate-slide-up { animation: slideUp 0.35s ease-out; }
+
+/* ── Toast ────────────────────────────────────────────────────────── */
+.toast-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* ── Tab active underline ─────────────────────────────────────────── */
+.tab-active {
+  border-bottom: 2px solid var(--brand-500);
+  color: var(--text-primary);
+}
+.tab-inactive {
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+}
+.tab-inactive:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--surface-border);
+}

@@ -1,0 +1,52 @@
+# Dependency directories
+node_modules/
+jspdf/
+
+# Next.js build outputs
+.next/
+out/
+build/
+
+# Python Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+
+# Python Cache and Compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment variables (Sensitive files)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
