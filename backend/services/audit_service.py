@@ -2,25 +2,79 @@ import httpx
 import asyncio
 import os
 import json
+import re
 from groq import AsyncGroq
 from models.schemas import AuditResult, AuditScores, AuditRecommendation
 
-GROQ_KEY      = os.getenv("GROQ_API_KEY", "")
-PAGESPEED_KEY = os.getenv("PAGESPEED_API_KEY", "")
 PAGESPEED_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
-groq_client = AsyncGroq(api_key=GROQ_KEY)
+
+def _groq_client():
+    """Build Groq client at call time so the API key is always current."""
+    key = os.getenv("GROQ_API_KEY", "")
+    return AsyncGroq(api_key=key)
 
 # CRITICAL: Only 1 audit at a time — prevents Groq 429 rate limit errors
 _sem = asyncio.Semaphore(1)
 
 
+def _extract_json(text: str) -> dict:
+    """
+    Robustly extract a JSON object from an AI response that may contain:
+    - Markdown code fences (```json ... ``` or ``` ... ```)
+    - Preamble text before the JSON
+    - Trailing text or commentary after the JSON
+    - Truncated responses (tries to find the largest valid {...} block)
+    """
+    # Step 1: strip markdown fences
+    text = re.sub(r'```(?:json)?', '', text).strip()
+
+    # Step 2: find the outermost { ... } using a brace-matching scan
+    start = text.find('{')
+    if start == -1:
+        raise json.JSONDecodeError("No JSON object found", text, 0)
+
+    depth = 0
+    end = -1
+    in_string = False
+    escape = False
+    for i, ch in enumerate(text[start:], start):
+        if escape:
+            escape = False
+            continue
+        if ch == '\\' and in_string:
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+
+    if end == -1:
+        # Truncated — try to parse what we have by closing open braces
+        fragment = text[start:]
+        open_braces = fragment.count('{') - fragment.count('}')
+        fragment += '}' * open_braces
+        return json.loads(fragment)
+
+    return json.loads(text[start:end + 1])
+
+
 async def get_pagespeed(url: str) -> dict:
+    pagespeed_key = os.getenv("PAGESPEED_API_KEY", "")
     out = {"error": False}
     async with httpx.AsyncClient(timeout=35) as c:
         try:
             r = await c.get(PAGESPEED_URL, params={
-                "url": url, "key": PAGESPEED_KEY, "strategy": "mobile",
+                "url": url, "key": pagespeed_key, "strategy": "mobile",
                 "category": ["performance", "seo", "accessibility", "best-practices"],
             })
             if r.status_code == 200:
@@ -47,7 +101,7 @@ async def get_pagespeed(url: str) -> dict:
 
         try:
             r2 = await c.get(PAGESPEED_URL, params={
-                "url": url, "key": PAGESPEED_KEY, "strategy": "desktop",
+                "url": url, "key": pagespeed_key, "strategy": "desktop",
                 "category": ["performance"],
             })
             if r2.status_code == 200:
@@ -115,15 +169,15 @@ Return ONLY a raw JSON object — no markdown, no explanation, no code fences.
   "final_verdict": "<2-3 sentences: assessment and single most important next step>"
 }}"""
 
-    resp = await groq_client.chat.completions.create(
+    client = _groq_client()
+    resp = await client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
-        max_tokens=2000,
+        max_tokens=3000,  # increased — 2000 could truncate mid-JSON
     )
     text = resp.choices[0].message.content or "{}"
-    text = text.replace("```json", "").replace("```", "").strip()
-    return json.loads(text)
+    return _extract_json(text)
 
 
 async def run_audit(business_id: str, name: str, website: str) -> AuditResult:
@@ -132,6 +186,10 @@ async def run_audit(business_id: str, name: str, website: str) -> AuditResult:
         try:
             ps = await get_pagespeed(website)
             try:
+                analysis = await analyze(name, website, ps)
+            except json.JSONDecodeError:
+                # AI returned garbled JSON — wait briefly and retry once
+                await asyncio.sleep(5)
                 analysis = await analyze(name, website, ps)
             except Exception as e:
                 if "429" in str(e) or "rate_limit" in str(e).lower():

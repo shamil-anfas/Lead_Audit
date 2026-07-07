@@ -75,5 +75,9 @@ export async function saveToSheets(businesses: Business[]) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ businesses }),
   })
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}))
+    return { success: false, error: e.detail || `Server error ${resp.status}` }
+  }
   return resp.json()
 }

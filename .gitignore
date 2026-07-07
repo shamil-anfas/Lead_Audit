@@ -27,7 +27,8 @@ __pycache__/
 .env.test.local
 .env.production.local
 *.env
-
+.env.example
+.env.local.example
 # IDEs and Editors
 .vscode/
 .idea/

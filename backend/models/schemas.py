@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, field_validator
+from typing import Optional, List, Union
 
 
 class Business(BaseModel):
@@ -8,11 +8,19 @@ class Business(BaseModel):
     category: Optional[str] = ""
     address: Optional[str] = ""
     phone: Optional[str] = ""
-    rating: Optional[str] = ""
+    rating: Optional[Union[str, float]] = ""
     website: Optional[str] = None
     maps_url: Optional[str] = ""
     city: Optional[str] = ""
     priority: Optional[str] = ""
+
+    @field_validator("rating", mode="before")
+    @classmethod
+    def coerce_rating_to_str(cls, v):
+        """Accept float ratings (e.g. 4.5) from Apify and convert to string."""
+        if v is None:
+            return ""
+        return str(v)
 
 
 class SearchRequest(BaseModel):

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, memo, useMemo } from 'react'
 import { Search, Globe, AlertCircle, CheckCircle, Download, ExternalLink, MapPin, Phone, Star, Zap, TrendingUp, Smartphone, Palette, Users, ShoppingCart, RefreshCw, Sheet } from 'lucide-react'
 import { Business, AuditResult, TabKey } from '@/types'
 import { searchBusinesses, auditWebsite, saveToSheets } from '@/lib/api'
@@ -37,7 +37,7 @@ function SkeletonCard() {
   )
 }
 
-function BusinessCard({ biz, audit, onAudit, onDownload }: {
+const BusinessCard = memo(function BusinessCard({ biz, audit, onAudit, onDownload }: {
   biz: Business
   audit?: AuditResult
   onAudit: () => void
@@ -164,7 +164,7 @@ function BusinessCard({ biz, audit, onAudit, onDownload }: {
       </div>
     </div>
   )
-}
+}, (prev, next) => prev.biz === next.biz && prev.audit === next.audit)
 
 export default function HomePage() {
   const [keyword, setKeyword] = useState('')
@@ -246,19 +246,19 @@ export default function HomePage() {
     processQueue()
   }
 
-  const filtered = businesses.filter(b => {
+  const filtered = useMemo(() => businesses.filter(b => {
     if (tab === 'no-website') return !b.website
     if (tab === 'has-website') return !!b.website
     if (tab === 'audited') return audits[b.id]?.status === 'done'
     return true
-  })
+  }), [businesses, tab, audits])
 
-  const counts = {
+  const counts = useMemo(() => ({
     all: businesses.length,
     'no-website': businesses.filter(b => !b.website).length,
     'has-website': businesses.filter(b => !!b.website).length,
     audited: Object.values(audits).filter(a => a.status === 'done').length,
-  }
+  }), [businesses, audits])
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'all',         label: 'All Leads',     icon: <Users size={13} /> },
@@ -283,7 +283,7 @@ export default function HomePage() {
 
       {/* ── Header ── */}
       <header className="border-b" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-card)' }}>
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,var(--brand-600),var(--brand-500))' }}>
               <TrendingUp size={18} color="#fff" />
@@ -293,7 +293,7 @@ export default function HomePage() {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>AI-powered lead generation & website auditing</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="hidden sm:flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span className="flex items-center gap-1.5"><Zap size={11} color="var(--brand-400)" /> Groq AI</span>
             <span className="flex items-center gap-1.5"><Smartphone size={11} color="var(--brand-400)" /> PageSpeed</span>
             <span className="flex items-center gap-1.5"><Sheet size={11} color="var(--brand-400)" /> Sheets</span>
@@ -301,14 +301,14 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* ── Search Box ── */}
         <div className="glass rounded-2xl p-6 space-y-4">
           <div>
             <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Find Your Next Clients</h2>
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Search Google Maps for businesses, auto-audit their websites, and generate lead reports.</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
@@ -329,15 +329,20 @@ export default function HomePage() {
               className="px-4 py-3 rounded-xl text-sm outline-none"
               style={{ background: 'var(--surface-elevated)', border: '1px solid var(--surface-border)', color: 'var(--text-primary)' }}
             >
+              <option value={10}>10 results</option>
+              <option value={25}>25 results</option>
               <option value={50}>50 results</option>
               <option value={100}>100 results</option>
+              <option value={150}>150 results</option>
               <option value={200}>200 results</option>
+              <option value={250}>250 results</option>
+              <option value={500}>500 results</option>
             </select>
             <button
               id="search-btn"
               onClick={handleSearch}
               disabled={searching || !keyword.trim()}
-              className="btn-glow px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-glow w-full sm:w-auto px-6 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,var(--brand-600),var(--brand-500))', color: '#fff', minWidth: 120 }}
             >
               {searching ? (
@@ -364,7 +369,7 @@ export default function HomePage() {
 
         {/* ── Stats ── */}
         {businesses.length > 0 && (
-          <div className="grid grid-cols-4 gap-3 animate-fade-in">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in">
             {[
               { label: 'Total Leads', value: counts.all, icon: <Users size={18} />, color: 'var(--brand-400)' },
               { label: 'No Website', value: counts['no-website'], icon: <AlertCircle size={18} />, color: '#f87171' },
@@ -372,12 +377,12 @@ export default function HomePage() {
               { label: 'Audited', value: counts.audited, icon: <CheckCircle size={18} />, color: '#10b981' },
             ].map(s => (
               <div key={s.label} className="glass rounded-xl p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.color + '22', color: s.color }}>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.color + '22', color: s.color }}>
                   {s.icon}
                 </div>
                 <div>
-                  <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{s.value}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
+                  <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{s.value}</div>
+                  <div className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
                 </div>
               </div>
             ))}
@@ -387,13 +392,13 @@ export default function HomePage() {
         {/* ── Tabs + Grid ── */}
         {businesses.length > 0 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex gap-0 border-b" style={{ borderColor: 'var(--surface-border)' }}>
+            <div className="flex gap-0 border-b overflow-x-auto hide-scrollbar" style={{ borderColor: 'var(--surface-border)' }}>
               {tabs.map(t => (
                 <button
                   key={t.key}
                   id={`tab-${t.key}`}
                   onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${tab === t.key ? 'tab-active' : 'tab-inactive'}`}
+                  className={`flex items-center whitespace-nowrap gap-2 px-4 py-3 text-sm font-medium transition-colors ${tab === t.key ? 'tab-active' : 'tab-inactive'}`}
                 >
                   {t.icon} {t.label}
                   <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}>
@@ -437,7 +442,7 @@ export default function HomePage() {
             <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
               Enter a keyword like <span style={{ color: 'var(--brand-400)' }}>"dental clinics in Kerala"</span> to scrape Google Maps, auto-audit websites, and generate premium reports.
             </p>
-            <div className="flex justify-center gap-6 mt-8 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-8 text-xs" style={{ color: 'var(--text-muted)' }}>
               {[
                 { icon: <MapPin size={14} />, label: 'Google Maps Scraping' },
                 { icon: <Palette size={14} />, label: 'AI Website Auditing' },
