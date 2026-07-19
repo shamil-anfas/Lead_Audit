@@ -171,10 +171,14 @@ Return ONLY a raw JSON object — no markdown, no explanation, no code fences.
 
     client = _groq_client()
     resp = await client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}],
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": "You are a professional website auditor. Always respond with valid JSON only. No markdown, no explanation, no code fences."},
+            {"role": "user", "content": prompt}
+        ],
         temperature=0.3,
-        max_tokens=3000,  # increased — 2000 could truncate mid-JSON
+        max_tokens=4000,
+        response_format={"type": "json_object"},  # forces valid JSON output
     )
     text = resp.choices[0].message.content or "{}"
     return _extract_json(text)

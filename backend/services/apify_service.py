@@ -108,6 +108,7 @@ async def search_stream(keyword: str, max_results: int = 200) -> AsyncGenerator[
         yield sse("status", {"message": "Fetching all results…"})
         raw_items  = await fetch_dataset(dataset_id, limit=max_results + 100)
         businesses = [to_business(r) for r in raw_items if r.get("title") or r.get("name")]
+        businesses = businesses[:max_results]  # enforce the requested limit
 
         yield sse("status", {"message": f"Found {len(businesses)} businesses!"})
         yield sse("results", {"businesses": [b.model_dump() for b in businesses]})

@@ -1,9 +1,9 @@
 'use client'
 import { useState, useRef, useCallback, memo, useMemo } from 'react'
-import { Search, Globe, AlertCircle, CheckCircle, Download, ExternalLink, MapPin, Phone, Star, Zap, TrendingUp, Smartphone, Palette, Users, ShoppingCart, RefreshCw, Sheet } from 'lucide-react'
+import { Search, Globe, AlertCircle, CheckCircle, Download, ExternalLink, MapPin, Phone, Star, Zap, TrendingUp, Smartphone, Palette, Users, ShoppingCart, RefreshCw, Sheet, Eye } from 'lucide-react'
 import { Business, AuditResult, TabKey } from '@/types'
 import { searchBusinesses, auditWebsite, saveToSheets } from '@/lib/api'
-import { generatePDF } from '@/lib/pdf'
+import { generatePDF, viewPDF } from '@/lib/pdf'
 
 interface Toast { id: number; message: string; type: 'success' | 'error' | 'info' }
 
@@ -37,11 +37,12 @@ function SkeletonCard() {
   )
 }
 
-const BusinessCard = memo(function BusinessCard({ biz, audit, onAudit, onDownload }: {
+const BusinessCard = memo(function BusinessCard({ biz, audit, onAudit, onDownload, onViewPDF }: {
   biz: Business
   audit?: AuditResult
   onAudit: () => void
   onDownload: () => void
+  onViewPDF: () => void
 }) {
   const hasWebsite = !!biz.website
   const isAuditing = audit?.status === 'auditing'
@@ -136,6 +137,10 @@ const BusinessCard = memo(function BusinessCard({ biz, audit, onAudit, onDownloa
                 {audit.executive_summary && (
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{audit.executive_summary}</p>
                 )}
+                <button onClick={onViewPDF} className="btn-glow flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg font-medium w-full justify-center"
+                  style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#a5b4fc', border: '1px solid #312e8188' }}>
+                  <Eye size={12} /> View PDF Report
+                </button>
                 <button onClick={onDownload} className="btn-glow flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg font-medium w-full justify-center"
                   style={{ background: 'linear-gradient(135deg,var(--brand-600),var(--brand-500))', color: '#fff' }}>
                   <Download size={12} /> Download PDF Report
@@ -164,11 +169,11 @@ const BusinessCard = memo(function BusinessCard({ biz, audit, onAudit, onDownloa
       </div>
     </div>
   )
-}, (prev, next) => prev.biz === next.biz && prev.audit === next.audit)
+}, (prev, next) => prev.biz === next.biz && prev.audit === next.audit && prev.onViewPDF === next.onViewPDF)
 
 export default function HomePage() {
   const [keyword, setKeyword] = useState('')
-  const [maxResults, setMaxResults] = useState(100)
+  const [maxResults, setMaxResults] = useState(10)
   const [searching, setSearching] = useState(false)
   const [status, setStatus] = useState('')
   const [progress, setProgress] = useState(0)
@@ -293,11 +298,11 @@ export default function HomePage() {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>AI-powered lead generation & website auditing</p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+          {/* <div className="hidden sm:flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span className="flex items-center gap-1.5"><Zap size={11} color="var(--brand-400)" /> Groq AI</span>
             <span className="flex items-center gap-1.5"><Smartphone size={11} color="var(--brand-400)" /> PageSpeed</span>
             <span className="flex items-center gap-1.5"><Sheet size={11} color="var(--brand-400)" /> Sheets</span>
-          </div>
+          </div> */}
         </div>
       </header>
 
@@ -331,12 +336,12 @@ export default function HomePage() {
             >
               <option value={10}>10 results</option>
               <option value={25}>25 results</option>
-              <option value={50}>50 results</option>
-              <option value={100}>100 results</option>
-              <option value={150}>150 results</option>
-              <option value={200}>200 results</option>
-              <option value={250}>250 results</option>
-              <option value={500}>500 results</option>
+              {/* <option value={50}>50 results</option> */}
+              {/* <option value={100}>100 results</option> */}
+              {/* <option value={150}>150 results</option> */}
+              {/* <option value={200}>200 results</option> */}
+              {/* <option value={250}>250 results</option> */}
+              {/* <option value={500}>500 results</option> */}
             </select>
             <button
               id="search-btn"
@@ -424,6 +429,10 @@ export default function HomePage() {
                     onDownload={() => {
                       const a = audits[biz.id]
                       if (a?.status === 'done') generatePDF(biz, a)
+                    }}
+                    onViewPDF={() => {
+                      const a = audits[biz.id]
+                      if (a?.status === 'done') viewPDF(biz, a)
                     }}
                   />
                 ))}
