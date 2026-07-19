@@ -2,6 +2,10 @@
 
 LeadAudit Pro is a full-stack AI-powered lead generation and website auditing application. It provides advanced website analysis, combining web scraping, artificial intelligence, and performance metrics to generate comprehensive audit reports and capture valuable leads.
 
+## 🚀 Live Demo
+
+**Live Application:** https://leadaudit-pro.vercel.app
+
 ## Key Features
 
 - **AI-Powered Analysis**: Utilizes Groq-based AI analysis for in-depth insights.
