@@ -118,6 +118,3 @@ cd Lead_Audit
 4. Progress will be streamed in real-time.
 5. Once complete, you can view the detailed audit and generate a PDF report. Captured leads will be automatically sent to the configured Google Sheet.
 
-## License
-
-This project is licensed under the MIT License.
